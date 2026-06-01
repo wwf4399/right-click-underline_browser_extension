@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<title>轨迹还原工具</title>
+	<style>
+		body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+		.container { display: flex; gap: 20px; margin-top: 20px; }
+		.editor { display: flex; flex-direction: column; }
+		textarea { width: 400px; height: 150px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+		canvas { border: 1px solid #000; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+		h3 { margin-bottom: 5px; }
+		.controls { margin-top: 20px; }
+		button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+		button:hover { background: #0056b3; }
+	</style>
+</head>
+<body>
+
+	<h2>轨迹坐标还原</h2>
+
+	<div class="container">
+		<div class="editor">
+			<h3>轨迹 1 (红色 - 原始像素)</h3>
+			<textarea id="json1">[{"x":902,"y":138},{"x":797,"y":139},{"x":657,"y":143},{"x":536,"y":142},{"x":455,"y":139}]</textarea>
+			
+			<h3>轨迹 2 (蓝色 - 归一化/相对)</h3>
+			<p><small>* 自动放大 500 倍显示以保证可见</small></p>
+			<textarea id="json2">[{"x":0.7894259811930544,"y":0.0020054668457804336},{"x":0.47367065846767686,"y":0.010563708255989035},{"x":0.21045832676655302,"y":0.0091902836553081},{"x":0.052609820920541256,"y":0.004185648351270357},{"x":0,"y":0.0022371364653243847}]</textarea>
+			
+			<div class="controls">
+				<button onclick="draw()">更新并重绘轨迹</button>
+			</div>
+		</div>
+
+		<div>
+			<h3>画布预览</h3>
+			<canvas id="trackCanvas" width="1500" height="1500"></canvas>
+		</div>
+	</div>
+
+	<script>
+		function draw() {
+			const canvas = document.getElementById('trackCanvas');
+			const ctx = canvas.getContext('2d');
+			
+			// 清空画布
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			// 绘制轨迹函数
+			const renderPath = (jsonStr, color, scale = 1) => {
+				try {
+					const points = JSON.parse(jsonStr);
+					if (points.length < 1) return;
+
+					ctx.beginPath();
+					ctx.strokeStyle = color;
+					ctx.lineWidth = 2;
+					ctx.fillStyle = color;
+
+					points.forEach((p, index) => {
+						const posX = p.x * scale;
+						const posY = p.y * scale;
+
+						if (index === 0) {
+							ctx.moveTo(posX, posY);
+						} else {
+							ctx.lineTo(posX, posY);
+						}
+						// 画个小圆点标注坐标点
+						ctx.arc(posX, posY, 3, 0, Math.PI * 2);
+					});
+
+					ctx.stroke();
+				} catch (e) {
+					console.error("解析错误: ", e);
+				}
+			};
+
+			// 获取输入内容
+			const data1 = document.getElementById('json1').value;
+			const data2 = document.getElementById('json2').value;
+
+			// 绘制轨迹 1 (原样绘制)
+			renderPath(data1, 'red', 1);
+
+			// 绘制轨迹 2 (假设是归一化坐标，乘以 500 以便在画布上观察)
+			renderPath(data2, 'blue', 500);
+		}
+
+		// 页面加载后执行一次
+		window.onload = draw;
+	</script>
+</body>
+</html>

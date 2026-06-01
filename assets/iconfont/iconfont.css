@@ -1,0 +1,18 @@
+@font-face{
+	font-family: "iconfont"; /* Project id 5137466 */
+	src: url('iconfont.woff2?t=1773244241651') format('woff2');
+}
+.iconfont{
+	font-family: "iconfont" !important;
+	font-size: 16px;
+	font-style: normal;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+.icon-shezhi_2:before{
+	content: "\e6e4";
+}
+.icon-jichu_kaiguan:before{
+	content: "\e659";
+}
+
