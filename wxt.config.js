@@ -25,7 +25,15 @@ export default defineConfig({
 			"48": "icon/48.png",
 			"64": "icon/64.png",
 			"128":"icon/128.png"
-		},
+		}
+	},
+	hooks: {//钩子
+		//在生成最终 manifest 产物时暴力插入配置。[原本是可以写在上面的manifest中的，但是死活不生效]
+			'build:manifestGenerated': (wxt, manifest) => {
+				if(manifest.options_ui){
+					manifest.options_ui.open_in_tab = true;//当点击插件的“选项”是，不会以小窗的形式打开。而是在新窗口打开options.html
+				}
+			}
 	},
 	vite: () => ({
 		plugins: [

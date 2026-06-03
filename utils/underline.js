@@ -4,7 +4,6 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 
 //配置项-异步获取与实时监听
 	initAndListenSettings();
-	console.log(settings.isEnabled);
 //变量定义
 	let shadowHost, canvas, ctx;
 	let points1 = [];								// 用于绘图的高精度点
@@ -43,7 +42,7 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 				let x = e.clientX;
 				let y = e.clientY;
 				if(iframeElement){
-					const rect = iframeElement.getBoundingClientRect();
+					const rect = iframeElement.getBoundingClientRect();//尝试各种办法优化过了的，还是老老实实每次都去获取实时位置吧
 					x += rect.left;
 					y += rect.top;
 				}
