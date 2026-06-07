@@ -20,11 +20,16 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 	};
 //顶层窗口监听来自子 iframe 的跨域消息
 	if(isTopWindow){
+		const iframeMap = new WeakMap();
 		window.addEventListener('message', (msg) => {
 			if(typeof(msg.data)==='object' && msg.data.owner==='gesture-extension'){
 				const { type, clientX, clientY } = msg.data;
-				//找出发送该消息的 iframe 元素以换算坐标
-					const targetIframe = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source) || null;//frame 在 HTML5 已彻底移除。但在老网页中还是存在。
+				//找到对应的iframe
+					let targetIframe = iframeMap.get(msg.source);
+					if(targetIframe === undefined){
+						targetIframe = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source) || null;//frame 在 HTML5 已彻底移除。但在老网页中还是存在。
+						iframeMap.set(msg.source, targetIframe);
+					}
 				//模拟顶层鼠标动作，由主页面接管 Canvas 绘制
 					if(type === 'pointerdown'){
 						pointerdown_itemFn(getAbsolutePageCoords({ clientX, clientY }, targetIframe));
