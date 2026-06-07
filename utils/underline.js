@@ -301,10 +301,5 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 		if(isDrawing && e.button===2){
 			//阻止事件传播
 				finalBlocker(e);
-			//动作完成，销毁该次动作产生的所有监听器
-				if(controller){
-					controller.abort();
-					controller = null;
-				}
 		}
 	}
