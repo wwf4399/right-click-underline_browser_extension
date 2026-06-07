@@ -74,7 +74,6 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 				window.addEventListener('mousemove',	mouse_move,		{...myOptions, signal});//仅一个目的：阻止事件传播
 			//监听鼠标抬起
 				window.addEventListener('pointerup',	pointer_up,		{...myOptions, signal});
-				window.addEventListener('mouseup',		mouse_up,		{...myOptions, signal});//仅一个目的：阻止事件传播
 			//整个页面失去焦点[例如切换标签页、alt+tab切换窗口]
 				window.addEventListener('blur', (e) => {
 					//判断是否来自于iframe内部的失焦，如果是的话，不做处理
@@ -297,8 +296,6 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 					controller.abort();
 					controller = null;
 				}
-			//阻止事件传播
-				finalBlocker(e);
 			if(isTopWindow){
 				pointer_up_itemFn();
 			}else{
@@ -309,11 +306,5 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 					clientY: e.clientY
 				}, '*');
 			}
-		}
-	}
-	function mouse_up(e){
-		if(isDrawing && e.button===2){
-			//阻止事件传播
-				finalBlocker(e);
 		}
 	}
