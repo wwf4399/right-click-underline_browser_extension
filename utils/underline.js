@@ -10,6 +10,7 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 	let points2 = [];								// 用于逻辑匹配的稀疏点
 	let isDrawing = false;							// 是否正在绘制划线
 	let controller;									// 监听事件的控制器
+	let iframeElement;								// 发送的iframe
 	const isTopWindow = (window === window.top);	// 当前是否为顶层窗口（false=在iframe中）
 	const SAMPLING_DISTANCE = 15;					// 距离阈值：只有当移动距离超过 15 像素时，才记录到 points2
 	const DRAW_SAMPLING_DISTANCE = 3;				// 绘图点阈值：减少 points1 的堆积
@@ -20,21 +21,18 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 	};
 //顶层窗口监听来自子 iframe 的跨域消息
 	if(isTopWindow){
-		const iframeMap = new WeakMap();
 		window.addEventListener('message', (msg) => {
 			if(typeof(msg.data)==='object' && msg.data.owner==='gesture-extension'){
 				const { type, clientX, clientY } = msg.data;
 				//找到对应的iframe
-					let targetIframe = iframeMap.get(msg.source);
-					if(targetIframe === undefined){
-						targetIframe = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source) || null;//frame 在 HTML5 已彻底移除。但在老网页中还是存在。
-						iframeMap.set(msg.source, targetIframe);
+					if(iframeElement === undefined){
+						iframeElement = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source);
 					}
 				//模拟顶层鼠标动作，由主页面接管 Canvas 绘制
 					if(type === 'pointerdown'){
-						pointerdown_itemFn(getAbsolutePageCoords({ clientX, clientY }, targetIframe));
+						pointerdown_itemFn(getAbsolutePageCoords({ clientX, clientY }));
 					}else if(type === 'pointermove'){
-						pointer_move_itemFn(getAbsolutePageCoords({ clientX, clientY }, targetIframe));
+						pointer_move_itemFn(getAbsolutePageCoords({ clientX, clientY }));
 					}else if(type === 'pointerup'){
 						pointer_up_itemFn();
 					}else if(type === 'blur'){
@@ -43,7 +41,7 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 			}
 		});
 		//将 iframe 里的相对坐标转为主页面的绝对坐标
-			function getAbsolutePageCoords(e, iframeElement = null){
+			function getAbsolutePageCoords(e){
 				let x = e.clientX;
 				let y = e.clientY;
 				if(iframeElement){
@@ -62,16 +60,6 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 	}
 	window.addEventListener('pointerdown', (e) => {
 		if(settings.isEnabled && e.pointerType==='mouse' && e.buttons===2){//配置页开启了右键划线 && 仅限物理鼠标右键 && 是右键单独按下
-			if(isTopWindow){
-				pointerdown_itemFn({x: e.clientX, y: e.clientY});
-			}else{
-				window.top.postMessage({
-					owner: 'gesture-extension',
-					type: 'pointerdown',
-					clientX: e.clientX,
-					clientY: e.clientY
-				}, '*');
-			}
 			//控制器[控制监听事件失效]
 				//如果上一次动作没结束，直接全部取消
 					if(controller){
@@ -100,6 +88,22 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 					}
 					resetState();
 				}, {signal});
+			if(isTopWindow){
+				pointerdown_itemFn({x: e.clientX, y: e.clientY});
+			}else{
+				window.top.postMessage({
+					owner: 'gesture-extension',
+					type: 'pointerdown',
+					clientX: e.clientX,
+					clientY: e.clientY
+				}, '*');
+				//监听父窗口消息
+					window.addEventListener('message', (msg) => {
+						if(msg.data && msg.data.type==='drawingStatus'){
+							isDrawing = msg.data.isActive
+						}
+					}, {signal});
+			}
 		}
 	}, {capture: true});
 //右键菜单触发
@@ -214,6 +218,12 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 				canvas.style.display = 'none';
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 			}
+			//告诉iframe
+				if(iframeElement){
+					iframeElement.contentWindow.postMessage({type: 'drawingStatus', isActive: false}, '*');
+					iframeElement = undefined;
+				}
+			
 		}, 0)
 	}
 //鼠标移动
@@ -226,6 +236,10 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 						if(isDrawing === false){
 							isDrawing = true;
 							canvas.style.display = 'block';
+							//告诉iframe
+								if(iframeElement){
+									iframeElement.contentWindow.postMessage({type: 'drawingStatus', isActive: true}, '*');
+								}
 						}
 						drawPath();
 						//性能优化：清理 points1
