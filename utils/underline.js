@@ -24,7 +24,7 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 			if(typeof(msg.data)==='object' && msg.data.owner==='gesture-extension'){
 				const { type, clientX, clientY } = msg.data;
 				//找出发送该消息的 iframe 元素以换算坐标
-					const targetIframe = Array.from(document.querySelectorAll('iframe')).find(iframe => iframe.contentWindow === msg.source) || null;
+					const targetIframe = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source) || null;//frame 在 HTML5 已彻底移除。但在老网页中还是存在。
 				//模拟顶层鼠标动作，由主页面接管 Canvas 绘制
 					if(type === 'pointerdown'){
 						pointerdown_itemFn(getAbsolutePageCoords({ clientX, clientY }, targetIframe));
