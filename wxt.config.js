@@ -17,6 +17,7 @@ export default defineConfig({
 		],
 		host_permissions: [	// 所有地址可以加载本插件
 			'<all_urls>',
+			'chrome://*/*',
 			'file:///*'
 		],
 		icons: {
