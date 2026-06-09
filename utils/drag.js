@@ -41,6 +41,7 @@ import {executeActionByType} from '@/utils/function.js'
 		if(dragData.type){
 			e.preventDefault();
 			executeActionByType(dragData);
+			window.getSelection().empty();//取消当前页面的选中[例如文字选中]
 			dragData = {type: null, content: ""};
 		}
 	}, true);
