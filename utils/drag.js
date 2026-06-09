@@ -7,7 +7,14 @@ import {executeActionByType} from '@/utils/function.js'
 		let targetElement = e.target.nodeType===1 ? e.target : e.target.parentElement;//获取到实际的 DOM 元素节点，而不是文本节点或其他非元素节点
 		let targetUrl = targetElement?.tagName === 'A' ? targetElement.href : targetElement?.closest?.('a')?.href;//closest=逐级向上查找最近的父级 <a> 标签
 		let imageUrl = targetElement?.tagName === 'IMG' ? targetElement.src : null;
-		if(selection){
+
+		if(targetUrl){//link必须写在image上面，这样如果拖拽内容同时存在链接+图片，会优先识别到链接
+			dragData.type = 'link';
+			dragData.content = targetUrl;
+		}else if(imageUrl){
+			dragData.type = 'image';
+			dragData.content = imageUrl;
+		}else if(selection){
 			// 匹配常见的域名格式，不强制要求 http/https 协议
 				const urlRegex = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(:\d+)?(\/[\w\.\/?%&=-]*)?$/i;
 			if(urlRegex.test(selection)){
@@ -21,18 +28,12 @@ import {executeActionByType} from '@/utils/function.js'
 		}else if((e.ctrlKey || e.shiftKey) && imageUrl){//按下ctrl 或 shift进行拖拽，拖拽内容出现链接+图片的情况，会优先识别到图片。无法使用alt，因为按下alt就没办法拖拽了，只能选取文字
 			dragData.type = 'image';
 			dragData.content = imageUrl;
-		}else if(targetUrl){//link必须写在image上面，这样如果拖拽内容同时存在链接+图片，会优先识别到链接
-			dragData.type = 'link';
-			dragData.content = targetUrl;
-		}else if(imageUrl){
-			dragData.type = 'image';
-			dragData.content = imageUrl;
 		}
 	}, true);
 //拖拽API-元素被拖拽到目标区域上方。这个监听事件的拦截是否需要，目前并不清楚。感觉可能是需要的
 	window.addEventListener('dragover', (e) => {
 		if(dragData.type){
-			e.preventDefault()
+			e.preventDefault();
 		}
 	}, true);
 //完成拖拽操作
