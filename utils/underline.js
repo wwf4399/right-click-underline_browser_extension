@@ -24,12 +24,10 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 		window.addEventListener('message', (msg) => {
 			if(typeof(msg.data)==='object' && msg.data.owner==='gesture-extension'){
 				const { type, clientX, clientY } = msg.data;
-				//找到对应的iframe
-					if(iframeElement === undefined){
-						iframeElement = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source);
-					}
 				//模拟顶层鼠标动作，由主页面接管 Canvas 绘制
 					if(type === 'pointerdown'){
+						//找到对应的iframe
+							iframeElement = Array.from(document.querySelectorAll('iframe,frame')).find(iframe => iframe.contentWindow === msg.source);
 						pointerdown_itemFn(getAbsolutePageCoords({ clientX, clientY }));
 					}else if(type === 'pointermove'){
 						pointer_move_itemFn(getAbsolutePageCoords({ clientX, clientY }));
