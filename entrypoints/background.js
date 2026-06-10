@@ -62,20 +62,28 @@ export default defineBackground({
 		});
 		//实现关闭标签页后，聚焦的窗口是左边的标签[默认是右边]
 			browser.tabs.onRemoved.addListener((tabId, removeInfo) => {//在关闭标签页时触发
-				browser.tabs.query({ windowId: removeInfo.windowId }, (tabs) => {//获取当前窗口的所有标签页
-					if(tabs || tabs.length>0){
-						//这里一般找到的是“刚刚关闭的标签页”的右侧标签页
-							const activeTab = tabs.find(tab => tab.active);
-						if(activeTab){
-							//当前标签页从左到右的位置
-								const activeIndex = activeTab.index;
-							if(activeIndex >= 1){
-								const leftTab = tabs[activeIndex - 1];
-								browser.tabs.update(leftTab.id, { active: true });
+				if(lastTabId === tabId){//只有在当前标签页中关闭了当前标签页才需要触发下方逻辑
+					browser.tabs.query({ windowId: removeInfo.windowId }, (tabs) => {//获取当前窗口的所有标签页
+						if(tabs || tabs.length>0){
+							//这里一般找到的是“刚刚关闭的标签页”的右侧标签页
+								const activeTab = tabs.find(tab => tab.active);
+							if(activeTab){
+								//当前标签页从左到右的位置
+									const activeIndex = activeTab.index;
+								if(activeIndex >= 1){
+									const leftTab = tabs[activeIndex - 1];
+									browser.tabs.update(leftTab.id, { active: true });
+								}
 							}
 						}
-					}
-				});
+					});
+				}
+			});
+		//监听标签页切换事件
+			//最近一个切换的标签页id
+				let lastTabId = undefined;
+			browser.tabs.onActivated.addListener((activeInfo) => {
+				lastTabId = activeInfo.tabId;
 			});
 	}
 });
