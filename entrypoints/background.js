@@ -64,12 +64,16 @@ export default defineBackground({
 			browser.tabs.onRemoved.addListener((tabId, removeInfo) => {//在关闭标签页时触发
 				if(lastTabId === tabId){//只有在当前标签页中关闭了当前标签页才需要触发下方逻辑
 					browser.tabs.query({ windowId: removeInfo.windowId }, (tabs) => {//获取当前窗口的所有标签页
+						//这里一般找到的是“刚刚关闭的标签页”的右侧标签页
+							const activeTab = tabs.find(tab => tab.active);
+						//当前标签页从左到右的位置
+							const activeIndex = activeTab.index;
+						//如果等于的话，就说明当前的标签页本来就在最末尾，最末尾被关闭后，本来就是会往左进一位的
+							if(activeIndex+1 === tabs.length){
+								return;
+							}
 						if(tabs || tabs.length>0){
-							//这里一般找到的是“刚刚关闭的标签页”的右侧标签页
-								const activeTab = tabs.find(tab => tab.active);
 							if(activeTab){
-								//当前标签页从左到右的位置
-									const activeIndex = activeTab.index;
 								if(activeIndex >= 1){
 									const leftTab = tabs[activeIndex - 1];
 									browser.tabs.update(leftTab.id, { active: true });
