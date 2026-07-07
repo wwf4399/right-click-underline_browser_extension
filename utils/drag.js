@@ -1,12 +1,16 @@
 import {executeActionByType} from '@/utils/function.js'
 //拖拽数据
 	let dragData = {type: null, content: ""};
+	let startCoords = {x: 0, y: 0};				//记录拖拽开始时的鼠标坐标
 //拖拽API-开始
 	window.addEventListener('dragstart', (e) => {
 		const selection = window.getSelection().toString().trim();//获取用户当前在页面上选中的文本内容 trim=去除前后的空格
 		let targetElement = e.target.nodeType===1 ? e.target : e.target.parentElement;//获取到实际的 DOM 元素节点，而不是文本节点或其他非元素节点
 		let targetUrl = targetElement?.tagName === 'A' ? targetElement.href : targetElement?.closest?.('a')?.href;//closest=逐级向上查找最近的父级 <a> 标签
 		let imageUrl = targetElement?.tagName === 'IMG' ? targetElement.src : null;
+		//记录开始时的鼠标坐标
+			startCoords.x = e.clientX;
+			startCoords.y = e.clientY;
 
 		if(targetUrl){//link必须写在image上面，这样如果拖拽内容同时存在链接+图片，会优先识别到链接
 			dragData.type = 'link';
@@ -40,8 +44,15 @@ import {executeActionByType} from '@/utils/function.js'
 	window.addEventListener('drop', (e) => {
 		if(dragData.type){
 			e.preventDefault();
-			executeActionByType(dragData);
-			window.getSelection().empty();//取消当前页面的选中[例如文字选中]
-			dragData = {type: null, content: ""};
+			//计算水平和垂直方向的差值
+				const deltaX = e.clientX - startCoords.x;
+				const deltaY = e.clientY - startCoords.y;
+			//勾股定理计算直线距离（像素）
+				const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+			if(distance > 80){//拖拽距离不许大于n像素
+				executeActionByType(dragData);
+				window.getSelection().empty();//取消当前页面的选中[例如文字选中]
+				dragData = {type: null, content: ""};
+			}
 		}
 	}, true);
