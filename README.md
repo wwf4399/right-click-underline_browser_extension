@@ -32,4 +32,4 @@ pnpm build
 > 编译后的文件将生成在 `.output/chrome-mv3` 目录下。
 
 如果需要在chrome://中运行，浏览器需要开启某种模式，两个启动参数
-	"C:\Program Files\Google\Chrome\Application\chrome.exe" --extensions-on-chrome-urls --disable-features=DisableExtensionsOnChromeUrlsSwitch
+	C:\Program Files\Google\Chrome\Application\chrome.exe --extensions-on-chrome-urls --disable-features=DisableExtensionsOnChromeUrlsSwitch
