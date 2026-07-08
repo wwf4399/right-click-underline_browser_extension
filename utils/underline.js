@@ -1,11 +1,12 @@
 import {handleGesture} from '@/utils/handleGesture.js'					// 匹配右键划线的手势
 import {TrajectoryMatcher} from '@/utils/TrajectoryMatcher.js'			// 与划线相关的
 import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加载用户diy的配置
+import {getSharedShadowRoot} from '@/utils/shadowManager.js'			// 创建 Shadow DOM
 
 //配置项-异步获取与实时监听
 	initAndListenSettings();
 //变量定义
-	let shadowHost, canvas, ctx;
+	let canvas, ctx;
 	let points1 = [];								// 用于绘图的高精度点
 	let points2 = [];								// 用于逻辑匹配的稀疏点
 	let isDrawing = false;							// 是否正在绘制划线
@@ -117,21 +118,7 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 	function initCanvas(){
 		if(isTopWindow){
 			const dpr = window.devicePixelRatio || 1;
-			if(!shadowHost){
-				//创建 Shadow DOM 的宿主元素
-					shadowHost = document.createElement('div');
-					shadowHost.id = 'gesture-extension-shadow-host-' + Math.random().toString().slice(-6);
-					shadowHost.style.cssText = `
-						position: fixed !important;
-						top: 0 !important;
-						left: 0 !important;
-						width: 0 !important;
-						height: 0 !important;
-						z-index: 2147483647 !important;
-						pointer-events: none !important;
-					`;
-				//附加 shadow root (mode: 'closed' 可以最大程度防止原网页脚本探测和修改)
-					const shadowRoot = shadowHost.attachShadow({ mode: 'closed' });
+			if(canvas===undefined){
 				//创建真正的 canvas 元素
 					canvas = document.createElement('canvas');
 					canvas.style.cssText = `
@@ -152,8 +139,8 @@ import {settings, initAndListenSettings} from '@/utils/loadSettings.js'	// 加�
 						mix-blend-mode: normal !important;
 					`;
 				//将 canvas 挂载到影子根节点下，再将宿主挂载到 html
+					const shadowRoot = getSharedShadowRoot();
 					shadowRoot.appendChild(canvas);
-					document.documentElement.appendChild(shadowHost);
 					ctx = canvas.getContext('2d');
 			}
 			//页面的尺寸有可能会变化的，所以每次都需要动态设置
