@@ -60,34 +60,50 @@ export default defineBackground({
 				actions[message.action]()
 			}
 		});
-		//实现关闭标签页后，聚焦的窗口是左边的标签[默认是右边]
+		//实现关闭标签页后，根据来源方向决定聚焦到左边还是右边的标签页
 			browser.tabs.onRemoved.addListener((tabId, removeInfo) => {//在关闭标签页时触发
-				if(lastTabId === tabId){//只有在当前标签页中关闭了当前标签页才需要触发下方逻辑
+				if(lastTabInfo && lastTabInfo.id === tabId){//只有在当前标签页中关闭了当前标签页才需要触发下方逻辑
 					browser.tabs.query({ windowId: removeInfo.windowId }, (tabs) => {//获取当前窗口的所有标签页
-						//这里一般找到的是“刚刚关闭的标签页”的右侧标签页
-							const activeTab = tabs.find(tab => tab.active);
-						//当前标签页从左到右的位置
-							const activeIndex = activeTab.index;
-						//如果等于的话，就说明当前的标签页本来就在最末尾，最末尾被关闭后，本来就是会往左进一位的
-							if(activeIndex+1 === tabs.length){
-								return;
-							}
 						if(tabs || tabs.length>0){
-							if(activeTab){
+							const activeTab = tabs.find(tab => tab.active);//获取当前已经被浏览器默认聚焦的标签页
+							const activeIndex = activeTab.index;//当前标签页从左到右的位置
+							if(fromDirection === 'right'){
 								if(activeIndex >= 1){
 									const leftTab = tabs[activeIndex - 1];
 									browser.tabs.update(leftTab.id, { active: true });
 								}
+							}else if(fromDirection === 'left'){
+								//不用处理，应该浏览器默认就是这么做的
 							}
 						}
 					});
 				}
 			});
 		//监听标签页切换事件
-			//最近一个切换的标签页id
-				let lastTabId = undefined;
+			let lastTabInfo = null;			//用来记录上一个标签页的信息 结构为: { id: number, index: number , windowId: number}
+			let fromDirection = undefined;	//记录来源方向				'left', 'right' 或 undefined
 			browser.tabs.onActivated.addListener((activeInfo) => {
-				lastTabId = activeInfo.tabId;
+				browser.tabs.get(activeInfo.tabId, (currentTab) => {		//获取标签页的详细信息[主要是为了拿到 index],onActivated事件只提供 tabId 和 windowId
+					if(lastTabInfo){
+						if(lastTabInfo.windowId === currentTab.windowId){	//如果上一个标签和当前标签在同一个窗口，才可以对比左右
+							if(currentTab.index > lastTabInfo.index){
+								fromDirection = 'left';						//当前索引大，说明是从左边切过来的
+							}else if(currentTab.index < lastTabInfo.index){
+								fromDirection = 'right';					//当前索引小，说明是从右边切过来的
+							}else{
+								fromDirection = undefined;					//索引没变（极少发生，除非是用 API 移动了标签）
+							}
+						}else{
+							fromDirection = undefined;						//跨窗口切换，无法定义左右
+						}
+					}
+					//把本次切换后的标签页的信息记录一下，供下一次切换时对比
+						lastTabInfo = {
+							id: currentTab.id,
+							index: currentTab.index,
+							windowId: currentTab.windowId
+						};
+				});
 			});
 	}
 });
