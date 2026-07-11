@@ -80,19 +80,21 @@ export default defineBackground({
 				}
 			});
 		//监听标签页切换事件
-			let lastTabInfo = null;			//用来记录上一个标签页的信息 结构为: { id: number, index: number , windowId: number}
-			let fromDirection = undefined;	//记录来源方向				'left', 'right' 或 undefined
+			let lastTabInfo = null;											//用来记录上一个标签页的信息 结构为: { id: number, windowId: number}
+			let fromDirection = undefined;									//记录来源方向				'left', 'right' 或 undefined
 			browser.tabs.onActivated.addListener((activeInfo) => {
 				browser.tabs.get(activeInfo.tabId, (currentTab) => {		//获取标签页的详细信息[主要是为了拿到 index],onActivated事件只提供 tabId 和 windowId
 					if(lastTabInfo){
 						if(lastTabInfo.windowId === currentTab.windowId){	//如果上一个标签和当前标签在同一个窗口，才可以对比左右
-							if(currentTab.index > lastTabInfo.index){
-								fromDirection = 'left';						//当前索引大，说明是从左边切过来的
-							}else if(currentTab.index < lastTabInfo.index){
-								fromDirection = 'right';					//当前索引小，说明是从右边切过来的
-							}else{
-								fromDirection = undefined;					//索引没变（极少发生，除非是用 API 移动了标签）
-							}
+							browser.tabs.get(lastTabInfo.id, (prevTab) => {	//实时获取上一个标签页此时此刻最新位置（防止它被拖拽移动过）
+								if(currentTab.index > prevTab.index){
+									fromDirection = 'left';					//当前索引大，说明是从左边切过来的
+								}else if(currentTab.index < prevTab.index){
+									fromDirection = 'right';				//当前索引小，说明是从右边切过来的
+								}else{
+									fromDirection = undefined;				//索引没变（极少发生，除非是用 API 移动了标签）
+								}
+							});
 						}else{
 							fromDirection = undefined;						//跨窗口切换，无法定义左右
 						}
@@ -100,7 +102,6 @@ export default defineBackground({
 					//把本次切换后的标签页的信息记录一下，供下一次切换时对比
 						lastTabInfo = {
 							id: currentTab.id,
-							index: currentTab.index,
 							windowId: currentTab.windowId
 						};
 				});
